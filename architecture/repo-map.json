@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "file_count": 2,
+  "selected_files": [
+    "src/telegram-nets.mjs",
+    "test/telegram-nets.test.mjs"
+  ],
+  "files": [
+    {
+      "path": "src/telegram-nets.mjs",
+      "sha256": "960907bf5c8b659faa9bd84d82587e8bc32ebb5e7e6abc093a75c62997766656",
+      "bytes": 4199,
+      "mime_type": "text/javascript",
+      "symbols": [
+        "L33: function ipToInt(ip) ",
+        "L63: function isAllowedHost(host) ",
+        "L90: function parseDst(dst) "
+      ],
+      "score": 63,
+      "parser": "acorn",
+      "dependencies": [],
+      "dependents": [
+        "test/telegram-nets.test.mjs"
+      ],
+      "unresolved_imports": [],
+      "graph_incomplete": false,
+      "graph_score": 10.5
+    },
+    {
+      "path": "test/telegram-nets.test.mjs",
+      "sha256": "2f642b88e63a38248f083501695aaafb37fbfa8bb84bcaa977e12e4e7a98fd2f",
+      "bytes": 6381,
+      "mime_type": "text/javascript",
+      "symbols": [],
+      "score": 42,
+      "parser": "acorn",
+      "dependencies": [
+        "src/telegram-nets.mjs"
+      ],
+      "dependents": [],
+      "unresolved_imports": [
+        "node:assert/strict",
+        "node:test"
+      ],
+      "graph_incomplete": false,
+      "graph_score": 15.75
+    }
+  ],
+  "sha256": "c424a0a1fb28fa40ca90db00e2379b7e7fd66d927607309fb28dd17ad757a6f5"
+}
