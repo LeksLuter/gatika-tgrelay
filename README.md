@@ -1,49 +1,239 @@
-# Gatika Telegram WS relay
+# Gatika Telegram Relay
 
-Релей между WebSocket-клиентом Gatika и TCP-портом дата-центра Telegram.
-MTProto остаётся end-to-end: релей не видит ключи и не расшифровывает трафик.
+Cloudflare Worker that accepts WebSocket connections from a special client
+and forwards raw bytes over TCP **only** to Telegram server IP addresses.
+Everything else is rejected before any socket is opened.
 
-## Эндпоинт
+- Transport: WebSocket in, TCP out via `cloudflare:sockets` (`connect`).
+- Allowlist: literal dotted-quad IPv4 addresses inside `TELEGRAM_NETS` only.
+- Diagnostics: `probe=1` checks TCP connectability, `probe=2` runs one
+  MTProto obfuscation handshake (`req_pq_multi`) and returns a hex dump.
+- Offline-testable: all request logic lives in `src/relay.mjs` behind
+  injected `connect` / `makeWebSocketPair` factories; only `src/index.mjs`
+  imports `cloudflare:sockets`.
 
+No secrets, tokens, or account identifiers are stored in this repository.
+
+## Allowed Telegram networks
+
+Defined in `src/telegram-nets.mjs` (`TELEGRAM_NETS`):
+
+| Base | Prefix | Range |
+| --- | --- | --- |
+| `91.108.4.0` | `/22` | `91.108.4.0` – `91.108.7.255` |
+| `91.108.8.0` | `/22` | `91.108.8.0` – `91.108.11.255` |
+| `91.108.12.0` | `/22` | `91.108.12.0` – `91.108.15.255` |
+| `91.108.16.0` | `/22` | `91.108.16.0` – `91.108.19.255` |
+| `91.108.20.0` | `/22` | `91.108.20.0` – `91.108.23.255` |
+| `91.108.56.0` | `/22` | `91.108.56.0` – `91.108.59.255` |
+| `91.105.192.0` | `/23` | `91.105.192.0` – `91.105.193.255` |
+| `149.154.160.0` | `/20` | `149.154.160.0` – `149.154.175.255` |
+| `185.76.151.0` | `/24` | `185.76.151.0` – `185.76.151.255` |
+
+Membership is inclusive of the base address and exclusive of
+`base + 2 ** (32 - prefix)`. Hostnames, IPv6 literals, and malformed
+IPv4 strings are never allowed.
+
+## Query parameters
+
+All parameters are query-string values on the Worker URL:
+
+### `dst=host[:port]`
+
+- Required for every mode.
+- `host` must be a non-empty literal IPv4 address without whitespace or
+  extra colons. DNS is never resolved.
+- `port` is optional and defaults to `443`.
+- When present, `port` must be a decimal integer in `[1, 65535]`.
+  `0`, `70000`, empty, signed, or non-numeric ports are rejected.
+- The parsed host must satisfy `isAllowedHost(host)`; otherwise the
+  request fails with `403` before `connect` is called.
+
+Examples: `dst=91.108.4.5`, `dst=91.108.4.5:443`, `dst=149.154.167.51:443`.
+
+### `dc=<int>`
+
+- Data-center number used only by `probe=2`.
+- Defaults to `2` when absent (`?dst=…&probe=2` behaves as `dc=2`).
+- Passed to `buildHandshake(random64, dcNum, nonce)` and stored
+  little-endian in handshake bytes 60/61.
+
+### `probe=<0|1|2>`
+
+- Absent or `0`: normal relay mode. Requires `Upgrade: websocket`.
+- `1`: TCP connectivity diagnostic over plain HTTPS (no upgrade needed).
+- `2`: MTProto handshake diagnostic over plain HTTPS (no upgrade needed).
+- Any other non-zero numeric value with a WebSocket upgrade falls through
+  to relay mode; without an upgrade it is treated as a probe request and
+  therefore bypasses the `426` guard.
+
+## Request handling and status codes
+
+| Request | Response |
+| --- | --- |
+| No `Upgrade: websocket` header and no truthy `probe` | `426` `Gatika relay: только WebSocket`. No socket is opened. |
+| `dst` missing, malformed, bad port, or outside Telegram nets | `403` `Gatika relay: адрес не из Telegram`. `connect` is never called. |
+| `connect()` throws or returns an unusable socket | `502` `Gatika relay: connect failed`. |
+| `?dst=<allowed>&probe=1`, TCP opens | `200` `connected <dst>` (echoes the raw `dst` value). |
+| `?dst=<allowed>&probe=1`, TCP fails | `502` `connect failed: <message>`. |
+| `?dst=<allowed>&probe=2[&dc=N]` | Always `200` with a diagnostic string (see below). Never throws. |
+| `Upgrade: websocket` + allowed `dst` | `101` with the Worker WebSocket attached. Bytes are piped both ways. |
+
+### `probe=2` response format
+
+On success:
+
+```text
+resp <n>B plain: <hex>
+key: <hex>
+iv: <hex>
+cipher: <hex>
 ```
-wss://gatika-tgrelay.goldklonleks.workers.dev/apiws?dst=149.154.167.51:443&dc=2
+
+- `<n>` is the received byte length.
+- `plain` is the first 40 decrypted bytes (byte-reversed key/IV CTR stream).
+- `key`, `iv`, and `cipher` are full lowercase hex dumps.
+
+Failure modes return a single diagnostic line instead:
+
+- `connect failed: …`
+- `handshake failed: …`
+- `write failed: …`
+- `read failed: …`
+- `read done, 0 bytes`
+
+The read waits for one chunk with an 8-second timeout implemented via
+`reader.cancel()`.
+
+## Example calls
+
+Replace `relay.example` with the deployed Worker hostname.
+
+Check that plain HTTP without upgrade is rejected:
+
+```sh
+curl -i 'https://relay.example/?dst=91.108.4.5:443'
+# -> 426 Gatika relay: только WebSocket
 ```
 
-Параметры:
+Reject a non-Telegram address (no connection is opened):
 
-- `dst` — IPv4:порт дата-центра Telegram; обязателен, проверяется по allowlist.
-- `dc` — номер DC, только для диагностики.
-- `probe=1` — проверить TCP-соединение до `dst`.
-- `probe=2` — отправить MTProto `req_pq_multi` и вернуть `resPQ`.
-
-## Проверка
-
-```powershell
-Invoke-WebRequest 'https://gatika-tgrelay.goldklonleks.workers.dev/?probe=1&dst=149.154.167.51:443'
-Invoke-WebRequest 'https://gatika-tgrelay.goldklonleks.workers.dev/?probe=2&dst=149.154.167.51:443&dc=2'
+```sh
+curl -i 'https://relay.example/?dst=8.8.8.8:443' -H 'Upgrade: websocket'
+# -> 403 Gatika relay: адрес не из Telegram
 ```
 
-Ожидаемо: `connected ...` и `resp 101B plain: ...`.
+TCP diagnostic (no WebSocket upgrade required):
 
-## Деплой
-
-```powershell
-cd workers/tgrelay
-npx wrangler login
-npx wrangler deploy
+```sh
+curl -i 'https://relay.example/?dst=91.108.4.5:443&probe=1'
+# -> 200 connected 91.108.4.5:443
 ```
 
-Нужен Cloudflare-аккаунт с Workers. Бесплатный план даёт 100 000 запросов в сутки;
-WebSocket-соединение считается один раз при handshake, а не за каждый кадр.
+MTProto diagnostic for DC 2:
 
-## Ограничение LXI
+```sh
+curl -i 'https://relay.example/?dst=91.108.4.5:443&probe=2&dc=2'
+# -> 200 resp 16B plain: …
+```
 
-Бесплатный хостинг LXI — Apache + PHP 8.3, без постоянных процессов.
-Он не принимает WebSocket Upgrade и не может держать TCP-соединение до Telegram.
-Поэтому этот Worker нельзя «залить в LXI» как PHP-сайт: нужен либо
-постоянный Python worker на LXI Pro (€9.99/мес), либо VPS, либо Cloudflare.
+Relay mode (client must speak WebSocket; raw TCP bytes are tunnelled):
 
-## Безопасность
+```js
+const ws = new WebSocket("wss://relay.example/?dst=149.154.167.51:443");
+ws.binaryType = "arraybuffer";
+ws.onopen = () => ws.send(new Uint8Array([1, 2, 3]));
+ws.onmessage = (ev) => console.log(new Uint8Array(ev.data));
+```
 
-Релей разрешает только официальные IPv4-подсети Telegram и порты 1–65535.
-Ключи MTProto через релей не передаются в открытом виде.
+## Limits
+
+- **WebSocket only for relaying.** Plain HTTP(S) is accepted solely for
+  `probe=1` / `probe=2` diagnostics.
+- **IP addresses only.** `dst` never triggers DNS; `example.com:443` is a
+  `403`, even if it would resolve to a Telegram range.
+- **Telegram ranges only.** Any address outside `TELEGRAM_NETS` is a `403`
+  before `connect`.
+- **No authentication built in.** Anyone who knows the Worker URL and an
+  allowed IP can relay traffic and consume Workers / socket quota.
+  Put access control (token, allowlisted client, rate limit) in front if
+  the endpoint is public.
+- **`probe=2` discloses handshake material.** Its `200` response echoes the
+  derived `key`, `iv`, and ciphertext. Gate or disable it before
+  production use.
+- **Hardcoded ranges drift.** Telegram may change its networks; update
+  `src/telegram-nets.mjs` and redeploy when `403`s no longer match reality.
+- **No backpressure signal upstream.** Client-to-socket writes are
+  serialized through a promise chain (write failure closes with `1011`);
+  socket-to-client uses `server.send(value)` without a drain check.
+
+## Tests
+
+Requires Node.js 20 or newer. No network access is used; sockets and
+`WebSocketPair` are faked in tests.
+
+```sh
+npm test
+# equivalent: node --test test/
+```
+
+Syntax / config check without running tests:
+
+```sh
+npm run check
+# equivalent per-file node --check over src/*.mjs and test/*.test.mjs
+```
+
+What is covered:
+
+- `test/telegram-nets.test.mjs`: range boundaries, invalid IPv4 forms,
+  hostname rejection, `parseDst` default port `443`, ports `0`/`70000`.
+- `test/mtproto-crypto.test.mjs`: output lengths, determinism, differing
+  keystreams for differing IVs/keys, `xorBuf` round-trip, input immutability.
+- `test/relay.test.mjs`: `426` without upgrade, `403` without calling
+  `connect`, `probe=1` success/failure, `probe=2` against a simulated
+  socket, `101` upgrade with one frame forwarded in each direction.
+
+`src/index.mjs` is syntax-checked only because `cloudflare:sockets` and
+the `WebSocketPair` global do not exist under Node.
+
+## Deployment (Cloudflare Workers)
+
+`wrangler.toml` contains only routing metadata (no secrets):
+
+```toml
+name = "gatika-telegram-relay"
+main = "src/index.mjs"
+compatibility_date = "2024-11-01"
+```
+
+Steps:
+
+1. Install the toolchain: Node.js 20+ and `wrangler` (`npm i -g wrangler`
+   or `npx wrangler --version`).
+2. Authenticate locally (`wrangler login`); never commit tokens or
+   account IDs to this repository.
+3. Verify offline: `npm run check && npm test`.
+4. Deploy: `npx wrangler deploy` (or `wrangler deploy`).
+5. Smoke-test the deployment from a machine with internet access:
+   - `curl 'https://<worker.dev>/?dst=91.108.4.5:443&probe=1'`
+     expects `200 connected …`.
+   - `curl 'https://<worker.dev>/?dst=91.108.4.5:443&probe=2&dc=2'`
+     expects `200 resp …` or a `read …` diagnostic line.
+   - Open a WebSocket to `wss://<worker.dev>/?dst=<allowed-ip>:443`
+     from the special client and confirm bidirectional traffic.
+6. For production, gate or remove `probe=2` and add an access-control
+   layer in front of the Worker.
+
+## Project layout
+
+```text
+src/index.mjs            Worker entrypoint (only cloudflare:sockets import)
+src/relay.mjs            Request decision tree + byte piping (createRelay, msgBytes)
+src/telegram-nets.mjs    TELEGRAM_NETS, ipToInt, isAllowedHost, parseDst
+src/mtproto-crypto.mjs   ecbBlock, ctrStream, xorBuf, buildHandshake
+src/mtproto-probe.mjs    mtprotoProbe socket I/O + response decryption
+test/                    Offline node:test suites (fake sockets/pairs)
+wrangler.toml            Worker name, entrypoint, compatibility date
+package.json             Private ESM package, test/check scripts
+```
