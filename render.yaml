@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: gatika-tgrelay
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: node scripts/serve-node-relay.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: WS_LIFETIME_MS
+        value: "0"

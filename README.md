@@ -3,8 +3,8 @@
 Telegram WebSocket-to-TCP relay with two runtimes:
 
 - **Cloudflare Worker** — current production endpoint, `src/index.mjs`.
-- **Netlify Server** — Node.js 24 backup/test endpoint,
-  `netlify/server/index.mjs`.
+- **Netlify Server / Render** — Node.js backup/test endpoint,
+  `netlify/server/index.mjs` or `scripts/serve-node-relay.mjs`.
 
 Both accept WebSocket connections from a special client and forward raw
 bytes over TCP **only** to Telegram server IP addresses. Everything else is
@@ -253,6 +253,12 @@ secrets the deploy job is skipped and the test job still runs.
 
 ## Deployment (Netlify Server)
 
+> **Plan gate:** Netlify Server requires a **credit-based** Netlify plan.
+> Legacy Free/Starter/Pro teams get `422 Netlify Server is only available on
+> credit-based plans` during the build, even though Netlify Server itself is
+> free during Early Access. Switching from a legacy plan is irreversible.
+> If you do not want to switch, use the Render blueprint below instead.
+
 This is an optional backup/test runtime, not a replacement for the working
 Cloudflare Worker. It uses Netlify Server, a long-running Node.js process —
 not Netlify Functions or Edge Functions, which cannot hold an incoming
@@ -306,6 +312,42 @@ Because of the 30-minute cut and 60-second idle rule, treat Netlify as a
 test/secondary endpoint. Keep Cloudflare as the primary relay until a real
 Telegram client proves reconnects are acceptable.
 
+## Deployment (Render, free)
+
+Render is the simplest free alternative when Netlify Server is blocked by
+the plan gate. It runs the same plain Node relay as a normal web service,
+supports inbound WebSockets, and allows outbound TCP to Telegram.
+
+`render.yaml` in the repository root is a Render Blueprint:
+
+- runtime: Node.js 24;
+- plan: Free;
+- region: Frankfurt;
+- start: `node scripts/serve-node-relay.mjs`;
+- health check: `/health`;
+- `WS_LIFETIME_MS=0` disables the 29-minute Netlify close, because Render
+  does not impose a maximum WebSocket duration.
+
+Steps:
+
+1. In Render: **New → Blueprint**, connect `LeksLuter/gatika-tgrelay`,
+   apply the blueprint.
+2. Wait for the first deploy, then check:
+   - `https://<service>.onrender.com/health` -> `ok`;
+   - `https://<service>.onrender.com/apiws?dst=91.108.4.5:443&probe=1` ->
+     `connected 91.108.4.5:443`.
+3. Client endpoint:
+   `wss://<service>.onrender.com/apiws?dst=<telegram-ip>:443&dc=2`.
+4. Run a real client. Render does not cut WebSockets by time, but a Free
+   service spins down after 15 minutes without inbound HTTP or WebSocket
+   traffic, then takes about a minute to wake up. Telegram traffic normally
+   prevents that; idle reconnects must tolerate the cold start.
+
+Render Free limits that matter: 750 instance hours per workspace per month,
+one service, 512 MB RAM, and outbound bandwidth counting against the free
+allowance. Netlify remains an option only after switching to a credit-based
+plan.
+
 ### LXI free hosting is not a relay runtime
 
 LXI Free provides PHP/Apache web hosting and scheduled tasks, not a
@@ -328,6 +370,7 @@ src/mtproto-crypto.mjs   ecbBlock, ctrStream, xorBuf, buildHandshake
 src/mtproto-probe.mjs    mtprotoProbe socket I/O + response decryption
 netlify/server/index.mjs Netlify Server entry (exports http.Server)
 netlify.toml             Node 24, public/, Frankfurt region
+render.yaml              Render Free blueprint (Node 24, Frankfurt)
 public/index.html        Status page served by Netlify at /
 scripts/serve-node-relay.mjs  Local Netlify Server runner
 test/                    Offline node:test suites (fake sockets/pairs)

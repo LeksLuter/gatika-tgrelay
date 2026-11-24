@@ -642,7 +642,9 @@ export function createRelayServer(options = {}) {
   const connect = typeof options.connect === "function"
     ? options.connect
     : (opts) => net.connect(opts);
-  const configured = Number(options.wsLifetimeMs);
+  // Netlify needs the 29-minute close; hosts without that cap can set
+  // WS_LIFETIME_MS=0 (Render blueprint does this) to keep sockets open.
+  const configured = Number(options.wsLifetimeMs ?? process.env.WS_LIFETIME_MS);
   const wsLifetimeMs = Number.isFinite(configured) && configured >= 0
     ? configured
     : DEFAULT_WS_LIFETIME_MS;
