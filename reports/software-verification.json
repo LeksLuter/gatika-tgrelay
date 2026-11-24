@@ -1,0 +1,11 @@
+{
+  "verification_mode": "static_host_parsers",
+  "runtime_execution": "not_run_without_isolated_runtime",
+  "checked_files": 12,
+  "passed_files": 12,
+  "issues": [],
+  "repair_rounds": 0,
+  "inherited_issues": [],
+  "repair_scope": "planned_or_changed_files",
+  "static_status": "passed"
+}
