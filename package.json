@@ -1,0 +1,24 @@
+{
+  "name": "gatika-telegram-relay",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker WebSocket relay restricted to Telegram IPv4 ranges, with TCP connect diagnostics and an MTProto obfuscation handshake probe.",
+  "main": "src/index.mjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/telegram-nets.mjs && node --check src/mtproto-crypto.mjs && node --check src/mtproto-probe.mjs && node --check src/relay.mjs && node --check src/index.mjs && node --check test/telegram-nets.test.mjs && node --check test/mtproto-crypto.test.mjs && node --check test/relay.test.mjs",
+    "check:src": "node --check src/telegram-nets.mjs && node --check src/mtproto-crypto.mjs && node --check src/mtproto-probe.mjs && node --check src/relay.mjs && node --check src/index.mjs"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "websocket",
+    "relay",
+    "telegram",
+    "mtproto"
+  ],
+  "license": "UNLICENSED"
+}
