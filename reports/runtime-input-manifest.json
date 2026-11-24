@@ -1,0 +1,127 @@
+{
+  "version": 2,
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "90abcd8e8be50206074a1a23b0db7f6d5a55552c6c2ac2e61c7f86b0b025ceaf",
+      "revision": 1,
+      "bytes": 9034
+    },
+    {
+      "path": "lxi.project.json",
+      "sha256": "ee67c76eeda9acdbea7f75097117877b6f02daf4f8029c1a26c064720f276358",
+      "revision": 1,
+      "bytes": 708
+    },
+    {
+      "path": "package.json",
+      "sha256": "4c8c8c08d13d99a4a1d4ab879c9c05aeb0ea5bc2e4ef76773b92ece42575da1b",
+      "revision": 1,
+      "bytes": 1019
+    },
+    {
+      "path": "src/index.mjs",
+      "sha256": "924ff702f8ebc6b2a10a82dbf372fbc5a3378c029b1baae0c6cce9190a393b72",
+      "revision": 1,
+      "bytes": 803
+    },
+    {
+      "path": "src/mtproto-crypto.mjs",
+      "sha256": "6585680076873b41b2c9db07f4987b5777598b8a74d68ab6f967ac602e3f4022",
+      "revision": 1,
+      "bytes": 6858
+    },
+    {
+      "path": "src/mtproto-probe.mjs",
+      "sha256": "fba110a7b39bf79b6f09e751f2f151e93feca0aa4da7fbda4258242064b4525b",
+      "revision": 1,
+      "bytes": 6988
+    },
+    {
+      "path": "src/relay.mjs",
+      "sha256": "74aa840fc9f5d3017a6b8b0335a31e4a34355b501ce485352940435d9f483e6d",
+      "revision": 2,
+      "bytes": 7833
+    },
+    {
+      "path": "src/telegram-nets.mjs",
+      "sha256": "d33ce44fcec2f30891eb9fd68e79c612753c3703abb0186068a4cfe222e9f3a2",
+      "revision": 5,
+      "bytes": 4103
+    },
+    {
+      "path": "test/mtproto-crypto.test.mjs",
+      "sha256": "4619f32635fcd988c20998096cc0549f200b43173a8880b302f82b70358b314c",
+      "revision": 1,
+      "bytes": 10662
+    },
+    {
+      "path": "test/relay.test.mjs",
+      "sha256": "abc1883a4e29702c052b4b58db3c73064b98996d4ffa4ca755e12d58c4ef977a",
+      "revision": 1,
+      "bytes": 8036
+    },
+    {
+      "path": "test/telegram-nets.test.mjs",
+      "sha256": "2f642b88e63a38248f083501695aaafb37fbfa8bb84bcaa977e12e4e7a98fd2f",
+      "revision": 1,
+      "bytes": 6381
+    },
+    {
+      "path": "wrangler.toml",
+      "sha256": "ade245782c2d5133c88792b062e5ae731cfe2f82c9bcdcdc6872fb47c0a33617",
+      "revision": 1,
+      "bytes": 221
+    }
+  ],
+  "plan_sha256": "a93764615ca0e14f86cf263df820ae1f54813014d6c4845d69ef3a935804240a",
+  "commands": [
+    [
+      "node",
+      "--check",
+      "src/telegram-nets.mjs"
+    ],
+    [
+      "node",
+      "--check",
+      "src/mtproto-crypto.mjs"
+    ],
+    [
+      "node",
+      "--check",
+      "src/mtproto-probe.mjs"
+    ],
+    [
+      "node",
+      "--check",
+      "src/relay.mjs"
+    ],
+    [
+      "node",
+      "--check",
+      "src/index.mjs"
+    ],
+    [
+      "node",
+      "--test",
+      "test/"
+    ],
+    [
+      "node",
+      "--test",
+      "--",
+      "test/mtproto-crypto.test.mjs",
+      "test/relay.test.mjs",
+      "test/telegram-nets.test.mjs"
+    ]
+  ],
+  "execution_policy": {
+    "format": "node-test-files/v1",
+    "required": [
+      "test/mtproto-crypto.test.mjs",
+      "test/relay.test.mjs",
+      "test/telegram-nets.test.mjs"
+    ]
+  },
+  "manifest_sha256": "bfb3ad529ebebfe267dd5bdc31f0721fafab870a15a42acb703196f033b67761"
+}
