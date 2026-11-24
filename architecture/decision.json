@@ -1,0 +1,152 @@
+{
+  "summary": "Smallest coherent architecture for the Telegram WebSocket relay on Cloudflare Workers: a pure allowlist/dst-parsing module, a pure MTProto crypto module, a probe module, a dependency-injected relay handler, a thin Worker entrypoint plus wrangler config, package/docs metadata, and a verification contract. Only src/telegram-nets.mjs and its test exist today; the remaining planned files are specified here as the target binding. All logic that can be tested offline is isolated behind injected connect/WebSocketPair factories so node --test runs without network access; the Worker entrypoint is only syntax-checked because cloudflare:sockets cannot resolve under Node.",
+  "components": [
+    {
+      "name": "Telegram network allowlist and dst parser",
+      "responsibility": "Owns the static list of Telegram IPv4 ranges and all address/parameter validation: strict dotted-quad parsing, range membership, and decomposition of the dst query parameter with default port 443. Pure, synchronous, no I/O.",
+      "files": [
+        "src/telegram-nets.mjs",
+        "test/telegram-nets.test.mjs"
+      ],
+      "interfaces": [
+        "TELEGRAM_NETS: ReadonlyArray<[baseIp: string, prefixBits: number]>",
+        "ipToInt(ip: string): number | null",
+        "isAllowedHost(host: string): boolean",
+        "parseDst(dst: string): { host: string, port: number } | null"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "MTProto crypto primitives",
+      "responsibility": "Owns AES-CTR keystream generation over WebCrypto AES-CBC single blocks, XOR helper, and deterministic construction of the 64-byte init buffer plus 41-byte framed req_pq_multi handshake from caller-supplied randomness and nonce. No sockets, no timers.",
+      "files": [
+        "src/mtproto-crypto.mjs",
+        "test/mtproto-crypto.test.mjs"
+      ],
+      "interfaces": [
+        "ecbBlock(key: Uint8Array(32), block: Uint8Array(16)): Promise<Uint8Array(16)>",
+        "ctrStream(key: Uint8Array(32), iv: Uint8Array(16), total: number): Promise<Uint8Array>",
+        "xorBuf(a: Uint8Array, b: Uint8Array): Uint8Array",
+        "buildHandshake(random64: Uint8Array(64), dcNum: number, nonce: Uint8Array(16)): Promise<{ init: Uint8Array(64), body: Uint8Array(41), key: Uint8Array(32), iv: Uint8Array(16) }>"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "MTProto probe",
+      "responsibility": "Performs the diagnostic handshake against an already-open socket: writes init+body, reads one response with an 8-second cancel timeout, decrypts with reversed key and IV, and returns a single diagnostic string. Never throws; all failures become descriptive strings.",
+      "files": [
+        "src/mtproto-probe.mjs"
+      ],
+      "interfaces": [
+        "mtprotoProbe(socket: { opened: Promise, writable: WritableStream, readable: ReadableStream }, dcNum: number): Promise<string>"
+      ],
+      "dependencies": [
+        "MTProto crypto primitives"
+      ]
+    },
+    {
+      "name": "WebSocket relay handler",
+      "responsibility": "Owns the request decision tree and byte piping: 426 for non-upgrade non-probe requests, dst parsing, 403 for non-Telegram targets before any connect, 502 on connect failure, probe=1 and probe=2 diagnostic paths, and otherwise a 101 upgrade with serialized client-to-socket writes and socket-to-client forwarding plus symmetric cleanup. Receives connect and WebSocketPair factories by injection.",
+      "files": [
+        "src/relay.mjs",
+        "test/relay.test.mjs"
+      ],
+      "interfaces": [
+        "createRelay({ connect: (opts: { hostname: string, port: number }) => Socket, makeWebSocketPair: () => Record<string, WebSocket> }): { fetch(request: Request): Promise<Response> }",
+        "msgBytes(event: { data: unknown }): Promise<Uint8Array>"
+      ],
+      "dependencies": [
+        "Telegram network allowlist and dst parser",
+        "MTProto probe"
+      ]
+    },
+    {
+      "name": "Worker entrypoint and deployment config",
+      "responsibility": "Binds the real platform: imports connect from cloudflare:sockets, instantiates the relay with the global WebSocketPair factory, and exports the default fetch handler. wrangler.toml carries only name, main and compatibility date.",
+      "files": [
+        "src/index.mjs",
+        "wrangler.toml"
+      ],
+      "interfaces": [
+        "export default { fetch(request: Request, env: unknown, ctx: unknown): Promise<Response> }"
+      ],
+      "dependencies": [
+        "WebSocket relay handler"
+      ]
+    },
+    {
+      "name": "Package metadata and operator documentation",
+      "responsibility": "Declares a private ESM package with no runtime dependencies, scripts for the Node test runner and per-file syntax checks, and documents purpose, allowed networks, dst/dc/probe parameters, example calls, security limits, test command and deployment steps.",
+      "files": [
+        "package.json",
+        "README.md"
+      ],
+      "interfaces": [
+        "npm scripts: test -> node --test test/, check -> node --check per source file",
+        "documented query contract: dst=host:port, dc=<int>, probe=0|1|2"
+      ],
+      "dependencies": [
+        "Worker entrypoint and deployment config"
+      ]
+    },
+    {
+      "name": "Verification contract",
+      "responsibility": "Declares the Node toolchain, syntax-only build commands with no network access, and the node-test evidence command over test/. No services, no dependency locks, no install steps.",
+      "files": [
+        "lxi.project.json"
+      ],
+      "interfaces": [
+        "version: 1",
+        "toolchains: { node: \"20.x\" }",
+        "build: node --check commands",
+        "tests: [{ id, argv: [\"node\", \"--test\", \"test/\"], evidence: \"node-test\" }]"
+      ],
+      "dependencies": [
+        "Telegram network allowlist and dst parser",
+        "MTProto crypto primitives",
+        "MTProto probe",
+        "WebSocket relay handler",
+        "Worker entrypoint and deployment config",
+        "Package metadata and operator documentation"
+      ]
+    }
+  ],
+  "invariants": [
+    "A socket is opened only after isAllowedHost(host) returns true; every rejection path returns before connect is called.",
+    "Hosts are accepted only as literal dotted-quad IPv4 inside TELEGRAM_NETS; hostnames, IPv6 literals and empty strings are rejected.",
+    "ipToInt returns null for anything that is not exactly four integer octets in 0..255, including empty parts, signs, decimals and whitespace.",
+    "parseDst defaults the port to 443 when absent and rejects ports that are not integers in 1..65535, including 0 and 70000.",
+    "Requests without Upgrade: websocket and without a truthy probe parameter return 426 and never touch the network.",
+    "probe=1 returns 200 with 'connected <dst>' on success and 502 on connect failure; probe=2 always returns 200 with a diagnostic string.",
+    "mtprotoProbe never throws and never rejects; connect, read, timeout and empty-response cases all map to strings.",
+    "buildHandshake is deterministic for identical random64, dcNum and nonce, and never mutates its input buffers.",
+    "The init buffer is 64 bytes with bytes 56..59 forced to 0xEF, dcNum little-endian in bytes 60..61, and the frame is 41 bytes with a 0x0A length prefix.",
+    "Response decryption uses the byte-reversed key and byte-reversed IV of the request.",
+    "Client-to-socket writes are serialized through a single promise chain so frames cannot interleave; a write failure closes the WebSocket with code 1011.",
+    "Socket read completion or error closes both the WebSocket and the socket exactly once, with close errors swallowed.",
+    "relay.mjs imports no platform module; connect and WebSocketPair enter only through createRelay arguments.",
+    "src/index.mjs is the only file importing cloudflare:sockets and is never imported by tests.",
+    "No secrets, tokens, account identifiers or credentials appear in source, wrangler.toml, package.json or README.",
+    "All automated tests run offline with fake sockets and fake WebSocket pairs; no test performs DNS resolution or outbound I/O."
+  ],
+  "verification_plan": [
+    "Static syntax check: node --check on src/telegram-nets.mjs, src/mtproto-crypto.mjs, src/mtproto-probe.mjs, src/relay.mjs, src/index.mjs and each test file; this is the only check applied to src/index.mjs.",
+    "Static config check: parse wrangler.toml and package.json for required keys (name, main, compatibility_date; type=module, private=true, test script) and assert absence of token/secret/account fields.",
+    "Offline unit tests via node --test test/ for telegram-nets: boundary addresses inside and outside every range, invalid IPs, hostname rejection, missing port default, port 0 and 70000.",
+    "Offline unit tests for mtproto-crypto: output lengths, determinism under fixed random64/nonce, differing keystreams for differing IVs, xorBuf round-trip, input-buffer immutability.",
+    "Offline unit tests for relay with injected fakes: 426 without upgrade and without probe, 403 for a non-Telegram dst with connect asserted never called, probe=1 success and failure, probe=2 against a simulated socket, 101 on valid upgrade, and one test frame forwarded in each direction.",
+    "Offline unit tests for mtproto-probe with a fake socket: success path returns the formatted diagnostic line, connect rejection, read rejection and empty read each return a string and never throw.",
+    "Isolated-runtime check (not part of node --test): deploy to the Workers runtime and exercise probe=1 and probe=2 against a real Telegram DC, since cloudflare:sockets and WebSocketPair do not exist under Node.",
+    "Manual acceptance check: connect the special client through the deployed relay and confirm bidirectional traffic to an allowed DC address only."
+  ],
+  "risks": [
+    "cloudflare:sockets and the WebSocketPair global are unavailable under Node, so src/index.mjs and the real upgrade path can only be syntax-checked offline and must be validated in the Workers runtime.",
+    "probe=2 returns the derived key, IV and ciphertext in the HTTP response, which leaks handshake material to anyone who can reach the endpoint; it should be gated or removed before production.",
+    "The relay is an open forwarder for anyone who knows an allowed Telegram IP, so it can be abused for traffic relaying and quota consumption without an additional access control layer.",
+    "The hardcoded TELEGRAM_NETS list can drift from Telegram's actual ranges, causing false 403s or unintended reachability.",
+    "MTProto handshake correctness (byte layout, req_pq_multi constructor, reversed-key response decryption) cannot be proven by offline tests and may only surface as diagnostic strings in production.",
+    "WebCrypto AES-CBC with a zero IV is used as a single-block ECB primitive; any runtime difference in padding or key-import behavior would silently corrupt the keystream.",
+    "Backpressure is handled only by a promise chain on the client-to-socket direction; the socket-to-client direction uses server.send without a drain check, risking buffering under load.",
+    "The approved design skeleton targets a browser web_tool layout, which does not match this headless Worker artifact and should not drive any UI files."
+  ]
+}
