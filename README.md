@@ -174,7 +174,7 @@ Requires Node.js 20 or newer. No network access is used; sockets and
 
 ```sh
 npm test
-# equivalent: node --test test/
+# equivalent: node --test
 ```
 
 Syntax / config check without running tests:
@@ -202,9 +202,10 @@ the `WebSocketPair` global do not exist under Node.
 `wrangler.toml` contains only routing metadata (no secrets):
 
 ```toml
-name = "gatika-telegram-relay"
+name = "gatika-tgrelay"
 main = "src/index.mjs"
 compatibility_date = "2024-11-01"
+workers_dev = true
 ```
 
 Steps:
@@ -224,6 +225,24 @@ Steps:
      from the special client and confirm bidirectional traffic.
 6. For production, gate or remove `probe=2` and add an access-control
    layer in front of the Worker.
+
+The current live endpoint is
+`https://gatika-tgrelay.goldklonleks.workers.dev/` (Worker `gatika-tgrelay`).
+The GitHub Actions workflow `.github/workflows/deploy.yml` runs the tests on
+every push and deploys to Cloudflare only when `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID` are configured as repository secrets. Without those
+secrets the deploy job is skipped and the test job still runs.
+
+### LXI free hosting is not a relay runtime
+
+LXI Free provides PHP/Apache web hosting and scheduled tasks, not a
+long-running process that can hold a WebSocket Upgrade and an outbound TCP
+socket. The LXI Pro “persistent Python worker” is sold for bots and
+background tasks; a public WebSocket port is not part of that description.
+Do not publish this Worker to LXI expecting `/apiws` to work: LXI Maker's
+`plesk` publication needs a verified build, and the generated artifact is a
+Cloudflare Worker, not a PHP script. Use Cloudflare Workers, a foreign VPS,
+ or a WebSocket-capable PaaS for the relay itself.
 
 ## Project layout
 
