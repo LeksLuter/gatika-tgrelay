@@ -1,0 +1,232 @@
+{
+  "manifest_sha256": "bfb3ad529ebebfe267dd5bdc31f0721fafab870a15a42acb703196f033b67761",
+  "source_manifest_verified": true,
+  "environment_sha256": "fa37d99ddb07695dd379e6cab15a911eb565a5133b0e217a2282131ba831e520",
+  "resolution_sha256": "9caea147fd632d7478cab91af518a717608b6e839d9453a486462b503cf6cc12",
+  "runtime_image": "sha256:b62eaa7b96b4f00c779d2da5bc7658239616b4bd216eeb9aa7774ff2ed9aa6d9",
+  "network_mode": "none",
+  "read_only_root": true,
+  "commands": [
+    {
+      "argv": [
+        "node",
+        "--check",
+        "src/telegram-nets.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "output_truncated": false,
+      "duration_seconds": 0.138,
+      "timed_out": false,
+      "id": "check-telegram-nets",
+      "cwd": ".",
+      "phase": "build"
+    },
+    {
+      "argv": [
+        "node",
+        "--check",
+        "src/mtproto-crypto.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "output_truncated": false,
+      "duration_seconds": 0.156,
+      "timed_out": false,
+      "id": "check-mtproto-crypto",
+      "cwd": ".",
+      "phase": "build"
+    },
+    {
+      "argv": [
+        "node",
+        "--check",
+        "src/mtproto-probe.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "output_truncated": false,
+      "duration_seconds": 0.142,
+      "timed_out": false,
+      "id": "check-mtproto-probe",
+      "cwd": ".",
+      "phase": "build"
+    },
+    {
+      "argv": [
+        "node",
+        "--check",
+        "src/relay.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "output_truncated": false,
+      "duration_seconds": 0.18,
+      "timed_out": false,
+      "id": "check-relay",
+      "cwd": ".",
+      "phase": "build"
+    },
+    {
+      "argv": [
+        "node",
+        "--check",
+        "src/index.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "output_truncated": false,
+      "duration_seconds": 0.189,
+      "timed_out": false,
+      "id": "check-index",
+      "cwd": ".",
+      "phase": "build"
+    },
+    {
+      "argv": [
+        "node",
+        "--test",
+        "test/"
+      ],
+      "exit_code": 1,
+      "stdout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<testsuites>\n\t<testsuite name=\"ecbBlock\" time=\"0.036889\" disabled=\"0\" errors=\"0\" tests=\"4\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"returns 16 bytes and is deterministic\" time=\"0.024671\" classname=\"test\"/>\n\t\t<testcase name=\"differs for different keys or blocks\" time=\"0.003315\" classname=\"test\"/>\n\t\t<testcase name=\"does not mutate inputs\" time=\"0.003605\" classname=\"test\"/>\n\t\t<testcase name=\"rejects wrong sizes\" time=\"0.002998\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"ctrStream\" time=\"0.075861\" disabled=\"0\" errors=\"0\" tests=\"7\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"has the requested length and handles zero length\" time=\"0.025365\" classname=\"test\"/>\n\t\t<testcase name=\"is deterministic for the same key and iv\" time=\"0.012493\" classname=\"test\"/>\n\t\t<testcase name=\"prefix property: shorter stream is a prefix of the longer one\" time=\"0.016280\" classname=\"test\"/>\n\t\t<testcase name=\"produces different streams for different IVs\" time=\"0.004775\" classname=\"test\"/>\n\t\t<testcase name=\"produces different streams for different keys\" time=\"0.008231\" classname=\"test\"/>\n\t\t<testcase name=\"does not mutate key or iv\" time=\"0.006269\" classname=\"test\"/>\n\t\t<testcase name=\"rejects invalid sizes\" time=\"0.001135\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"xorBuf\" time=\"0.003270\" disabled=\"0\" errors=\"0\" tests=\"4\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"xors byte-wise and round-trips\" time=\"0.001083\" classname=\"test\"/>\n\t\t<testcase name=\"xor with zeros is identity, xor with self is zero\" time=\"0.000395\" classname=\"test\"/>\n\t\t<testcase name=\"does not mutate inputs and returns a new buffer\" time=\"0.000432\" classname=\"test\"/>\n\t\t<testcase name=\"rejects length mismatch and non-bytes\" time=\"0.000844\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"buildHandshake\" time=\"0.142196\" disabled=\"0\" errors=\"0\" tests=\"7\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"returns init(64), body(41), key(32), iv(16) with expected framing\" time=\"0.031692\" classname=\"test\"/>\n\t\t<testcase name=\"encodes dcNum little-endian in bytes 60/61 (after decrypting the tail)\" time=\"0.063819\" classname=\"test\"/>\n\t\t<testcase name=\"is deterministic for identical random64, dcNum and nonce\" time=\"0.007799\" classname=\"test\"/>\n\t\t<testcase name=\"changes the body when the nonce changes\" time=\"0.010027\" classname=\"test\"/>\n\t\t<testcase name=\"guards 0xEF first byte and HEAD magic\" time=\"0.006297\" classname=\"test\"/>\n\t\t<testcase name=\"never mutates the input buffers\" time=\"0.019905\" classname=\"test\"/>\n\t\t<testcase name=\"rejects invalid inputs\" time=\"0.001469\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"msgBytes\" time=\"0.006067\" disabled=\"0\" errors=\"0\" tests=\"1\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"encodes strings and passes through bytes\" time=\"0.003437\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"relay 426 guard\" time=\"0.091621\" disabled=\"0\" errors=\"0\" tests=\"1\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"answers 426 without Upgrade and without probe\" time=\"0.091339\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"relay 403 guard\" time=\"0.037395\" disabled=\"0\" errors=\"0\" tests=\"3\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"rejects non-Telegram dst without opening a connection\" time=\"0.003445\" classname=\"test\"/>\n\t\t<testcase name=\"rejects missing dst and invalid ports without connecting\" time=\"0.003640\" classname=\"test\"/>\n\t\t<testcase name=\"defaults to port 443 and passes it to connect\" time=\"0.029290\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"relay probe=1\" time=\"0.012113\" disabled=\"0\" errors=\"0\" tests=\"3\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"returns 200 with connected dst on success\" time=\"0.008283\" classname=\"test\"/>\n\t\t<testcase name=\"returns 502 when the connection fails\" time=\"0.001930\" classname=\"test\"/>\n\t\t<testcase name=\"returns 502 when connect throws synchronously\" time=\"0.001198\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"relay probe=2\" time=\"0.052003\" disabled=\"0\" errors=\"0\" tests=\"1\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"runs the MTProto handshake against a simulated socket\" time=\"0.038513\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"relay 101 upgrade and piping\" time=\"0.063443\" disabled=\"0\" errors=\"0\" tests=\"1\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"upgrades allowed targets and forwards a frame in both directions\" time=\"0.063029\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"TELEGRAM_NETS shape\" time=\"0.004509\" disabled=\"0\" errors=\"0\" tests=\"1\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"contains the nine expected networks\" time=\"0.002663\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"ipToInt strict validation\" time=\"0.003550\" disabled=\"0\" errors=\"0\" tests=\"2\" failures=\"1\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"parses boundary values\" time=\"0.002606\" classname=\"test\" failure=\"Expected values to be strictly equal:+ actual - expected+ 1533805568- 1533066240      ^\">\n\t\t\t<failure type=\"testCodeFailure\" message=\"Expected values to be strictly equal:+ actual - expected+ 1533805568- 1533066240      ^\">\nError [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 1533805568\n- 1533066240\n      ^\n    at new Promise (&lt;anonymous>)\n    at Array.map (&lt;anonymous>) {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  + actual - expected\n  \n  + 1533805568\n  - 1533066240\n        ^\n      at TestContext.&lt;anonymous> (file:///workspace/test/telegram-nets.test.mjs:26:12)\n      at Test.runInAsyncScope (node:async_hooks:206:9)\n      at Test.run (node:internal/test_runner/test:796:25)\n      at Test.start (node:internal/test_runner/test:702:17)\n      at node:internal/test_runner/test:1133:71\n      at node:internal/per_context/primordials:482:82\n      at new Promise (&lt;anonymous>)\n      at new SafePromise (node:internal/per_context/primordials:450:29)\n      at node:internal/per_context/primordials:482:9\n      at Array.map (&lt;anonymous>) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 1533805568,\n    expected: 1533066240,\n    operator: 'strictEqual'\n  }\n}\n\t\t\t</failure>\n\t\t</testcase>\n\t\t<testcase name=\"rejects malformed IPv4 strings\" time=\"0.000485\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"isAllowedHost boundaries\" time=\"0.008484\" disabled=\"0\" errors=\"0\" tests=\"12\" failures=\"5\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"allows 91.108.4.0 and 91.108.7.255, rejects 91.108.3.255 and 91.108.8.0 (91.108.4.0)\" time=\"0.001272\" classname=\"test\" failure=\"Expected values to be strictly equal:true !== false\">\n\t\t\t<failure type=\"testCodeFailure\" message=\"Expected values to be strictly equal:true !== false\">\nError [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n\ntrue !== false\n\n    at new Promise (&lt;anonymous>)\n    at Array.map (&lt;anonymous>) {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.&lt;anonymous> (file:///workspace/test/telegram-nets.test.mjs:73:14)\n      at Test.runInAsyncScope (node:async_hooks:206:9)\n      at Test.run (node:internal/test_runner/test:796:25)\n      at Test.start (node:internal/test_runner/test:702:17)\n      at node:internal/test_runner/test:1133:71\n      at node:internal/per_context/primordials:482:82\n      at new Promise (&lt;anonymous>)\n      at new SafePromise (node:internal/per_context/primordials:450:29)\n      at node:internal/per_context/primordials:482:9\n      at Array.map (&lt;anonymous>) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: true,\n    expected: false,\n    operator: 'strictEqual'\n  }\n}\n\t\t\t</failure>\n\t\t</testcase>\n\t\t<testcase name=\"allows 91.108.8.0 and 91.108.11.255, rejects 91.108.7.255 and 91.108.12.0 (91.108.8.0)\" time=\"0.000742\" classname=\"test\" failure=\"Expected values to be strictly equal:true !== false\">\n\t\t\t<failure type=\"testCodeFailure\" message=\"Expected values to be strictly equal:true !== false\">\nError [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n\ntrue !== false\n\n    at async Promise.all (index 0) {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.&lt;anonymous> (file:///workspace/test/telegram-nets.test.mjs:72:14)\n      at Test.runInAsyncScope (node:async_hooks:206:9)\n      at Test.run (node:internal/test_runner/test:796:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:526:18)\n      at Test.postRun (node:internal/test_runner/test:889:19)\n      at Test.run (node:internal/test_runner/test:835:12)\n      at async Promise.all (index 0)\n      at async Suite.run (node:internal/test_runner/test:1135:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:526:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: true,\n    expected: false,\n    operator: 'strictEqual'\n  }\n}\n\t\t\t</failure>\n\t\t</testcase>\n\t\t<testcase name=\"allows 91.108.12.0 and 91.108.15.255, rejects 91.108.11.255 and 91.108.16.0 (91.108.12.0)\" time=\"0.000313\" classname=\"test\" failure=\"Expected values to be strictly equal:true !== false\">\n\t\t\t<failure type=\"testCodeFailure\" message=\"Expected values to be strictly equal:true !== false\">\n[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n\ntrue !== false\n] {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.&lt;anonymous> (file:///workspace/test/telegram-nets.test.mjs:72:14)\n      at Test.runInAsyncScope (node:async_hooks:206:9)\n      at Test.run (node:internal/test_runner/test:796:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:526:18)\n      at Test.postRun (node:internal/test_runner/test:889:19)\n      at Test.run (node:internal/test_runner/test:835:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:526:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: true,\n    expected: false,\n    operator: 'strictEqual'\n  }\n}\n\t\t\t</failure>\n\t\t</testcase>\n\t\t<testcase name=\"allows 91.108.16.0 and 91.108.19.255, rejects 91.108.15.255 and 91.108.20.0 (91.108.16.0)\" time=\"0.000420\" classname=\"test\" failure=\"Expected values to be strictly equal:true !== false\">\n\t\t\t<failure type=\"testCodeFailure\" message=\"Expected values to be strictly equal:true !== false\">\n[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n\ntrue !== false\n] {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.&lt;anonymous> (file:///workspace/test/telegram-nets.test.mjs:72:14)\n      at Test.runInAsyncScope (node:async_hooks:206:9)\n      at Test.run (node:internal/test_runner/test:796:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:526:18)\n      at Test.postRun (node:internal/test_runner/test:889:19)\n      at Test.run (node:internal/test_runner/test:835:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:526:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: true,\n    expected: false,\n    operator: 'strictEqual'\n  }\n}\n\t\t\t</failure>\n\t\t</testcase>\n\t\t<testcase name=\"allows 91.108.20.0 and 91.108.23.255, rejects 91.108.19.255 and 91.108.24.0 (91.108.20.0)\" time=\"0.000427\" classname=\"test\" failure=\"Expected values to be strictly equal:true !== false\">\n\t\t\t<failure type=\"testCodeFailure\" message=\"Expected values to be strictly equal:true !== false\">\n[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n\ntrue !== false\n] {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.&lt;anonymous> (file:///workspace/test/telegram-nets.test.mjs:72:14)\n      at Test.runInAsyncScope (node:async_hooks:206:9)\n      at Test.run (node:internal/test_runner/test:796:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:526:18)\n      at Test.postRun (node:internal/test_runner/test:889:19)\n      at Test.run (node:internal/test_runner/test:835:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:526:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: true,\n    expected: false,\n    operator: 'strictEqual'\n  }\n}\n\t\t\t</failure>\n\t\t</testcase>\n\t\t<testcase name=\"allows 91.108.56.0 and 91.108.59.255, rejects 91.108.55.255 and 91.108.60.0 (91.108.56.0)\" time=\"0.000387\" classname=\"test\"/>\n\t\t<testcase name=\"allows 91.105.192.0 and 91.105.193.255, rejects 91.105.191.255 and 91.105.194.0 (91.105.192.0)\" time=\"0.000279\" classname=\"test\"/>\n\t\t<testcase name=\"allows 149.154.160.0 and 149.154.175.255, rejects 149.154.159.255 and 149.154.176.0 (149.154.160.0)\" time=\"0.000404\" classname=\"test\"/>\n\t\t<testcase name=\"allows 185.76.151.0 and 185.76.151.255, rejects 185.76.150.255 and 185.76.152.0 (185.76.151.0)\" time=\"0.000355\" classname=\"test\"/>\n\t\t<testcase name=\"allows a middle address of each network\" time=\"0.000483\" classname=\"test\"/>\n\t\t<testcase name=\"rejects gaps between Telegram ranges\" time=\"0.001971\" classname=\"test\"/>\n\t\t<testcase name=\"rejects hostnames instead of IPs (no DNS resolution)\" time=\"0.000256\" classname=\"test\"/>\n\t</testsuite>\n\t<testsuite name=\"parseDst\" time=\"0.001972\" disabled=\"0\" errors=\"0\" tests=\"4\" failures=\"0\" skipped=\"0\" hostname=\"82baf223d8ba\">\n\t\t<testcase name=\"defaults to port 443 when absent\" time=\"0.000469\" classname=\"test\"/>\n\t\t<testcase name=\"parses explicit valid ports\" time=\"0.000707\" classname=\"test\"/>\n\t\t<testcase name=\"rejects port 0 and port 70000\" time=\"0.000227\" classname=\"test\"/>\n\t\t<testcase name=\"rejects missing or malformed hosts and ports\" time=\"0.000276\" classname=\"test\"/>\n\t</testsuite>\n\t<!-- tests 51 -->\n\t<!-- suites 14 -->\n\t<!-- pass 45 -->\n\t<!-- fail 6 -->\n\t<!-- cancelled 0 -->\n\t<!-- skipped 0 -->\n\t<!-- todo 0 -->\n\t<!-- duration_ms 1661.21951 -->\n</testsuites>\n",
+      "stderr": "",
+      "output_truncated": false,
+      "duration_seconds": 1.914,
+      "timed_out": false,
+      "failure_report": {
+        "version": 1,
+        "complete": true,
+        "failure_events": 6,
+        "failures": [
+          {
+            "path": "test/telegram-nets.test.mjs",
+            "line": 23,
+            "column": 3,
+            "name": "parses boundary values",
+            "failure_type": "testCodeFailure",
+            "error_code": "ERR_ASSERTION",
+            "operator": "strictEqual"
+          },
+          {
+            "path": "test/telegram-nets.test.mjs",
+            "line": 69,
+            "column": 5,
+            "name": "allows 91.108.4.0 and 91.108.7.255, rejects 91.108.3.255 and 91.108.8.0 (91.108.4.0)",
+            "failure_type": "testCodeFailure",
+            "error_code": "ERR_ASSERTION",
+            "operator": "strictEqual"
+          },
+          {
+            "path": "test/telegram-nets.test.mjs",
+            "line": 69,
+            "column": 5,
+            "name": "allows 91.108.8.0 and 91.108.11.255, rejects 91.108.7.255 and 91.108.12.0 (91.108.8.0)",
+            "failure_type": "testCodeFailure",
+            "error_code": "ERR_ASSERTION",
+            "operator": "strictEqual"
+          },
+          {
+            "path": "test/telegram-nets.test.mjs",
+            "line": 69,
+            "column": 5,
+            "name": "allows 91.108.12.0 and 91.108.15.255, rejects 91.108.11.255 and 91.108.16.0 (91.108.12.0)",
+            "failure_type": "testCodeFailure",
+            "error_code": "ERR_ASSERTION",
+            "operator": "strictEqual"
+          },
+          {
+            "path": "test/telegram-nets.test.mjs",
+            "line": 69,
+            "column": 5,
+            "name": "allows 91.108.16.0 and 91.108.19.255, rejects 91.108.15.255 and 91.108.20.0 (91.108.16.0)",
+            "failure_type": "testCodeFailure",
+            "error_code": "ERR_ASSERTION",
+            "operator": "strictEqual"
+          },
+          {
+            "path": "test/telegram-nets.test.mjs",
+            "line": 69,
+            "column": 5,
+            "name": "allows 91.108.20.0 and 91.108.23.255, rejects 91.108.19.255 and 91.108.24.0 (91.108.20.0)",
+            "failure_type": "testCodeFailure",
+            "error_code": "ERR_ASSERTION",
+            "operator": "strictEqual"
+          }
+        ]
+      },
+      "execution_report": {
+        "version": 1,
+        "complete": true,
+        "files": [
+          {
+            "path": "test/mtproto-crypto.test.mjs",
+            "executed": 22,
+            "skipped": 0
+          },
+          {
+            "path": "test/relay.test.mjs",
+            "executed": 10,
+            "skipped": 0
+          },
+          {
+            "path": "test/telegram-nets.test.mjs",
+            "executed": 19,
+            "skipped": 0
+          }
+        ]
+      },
+      "test_report": {
+        "valid": true,
+        "format": "junit",
+        "tests": 51,
+        "skipped": 0,
+        "executed": 51,
+        "failed": 6,
+        "file_smoke_cases": 0
+      },
+      "id": "test",
+      "cwd": ".",
+      "phase": "tests"
+    }
+  ],
+  "passed": false,
+  "environment_state": "executed",
+  "dependency_receipts": [],
+  "pending_services": [],
+  "wall_time_seconds": 4.26,
+  "verification_status": "failed",
+  "verification_level": "none",
+  "acceptance_verified": false,
+  "expected_commands": 7,
+  "executed_commands": 6,
+  "test_suites_passed": 0,
+  "tests_executed": 0,
+  "test_report_gaps": [],
+  "verification_blockers": [],
+  "environment_blockers": [],
+  "skipped": false,
+  "unsupported_files": [],
+  "native_test_coverage": {
+    "version": 1,
+    "manifest_sha256": "bfb3ad529ebebfe267dd5bdc31f0721fafab870a15a42acb703196f033b67761",
+    "required": [
+      "test/mtproto-crypto.test.mjs",
+      "test/relay.test.mjs",
+      "test/telegram-nets.test.mjs"
+    ],
+    "executed": [
+      "test/mtproto-crypto.test.mjs",
+      "test/relay.test.mjs",
+      "test/telegram-nets.test.mjs"
+    ],
+    "skipped": [],
+    "missing": [],
+    "complete": true
+  }
+}
