@@ -28,7 +28,7 @@
   "tests": [
     {
       "id": "test",
-      "argv": ["node", "--test", "test/"],
+      "argv": ["node", "--test"],
       "evidence": "node-test"
     }
   ]
