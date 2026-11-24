@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "toolchains": {
+    "node": "20.19.2"
+  },
+  "build": [
+    {
+      "id": "check-telegram-nets",
+      "argv": ["node", "--check", "src/telegram-nets.mjs"]
+    },
+    {
+      "id": "check-mtproto-crypto",
+      "argv": ["node", "--check", "src/mtproto-crypto.mjs"]
+    },
+    {
+      "id": "check-mtproto-probe",
+      "argv": ["node", "--check", "src/mtproto-probe.mjs"]
+    },
+    {
+      "id": "check-relay",
+      "argv": ["node", "--check", "src/relay.mjs"]
+    },
+    {
+      "id": "check-index",
+      "argv": ["node", "--check", "src/index.mjs"]
+    }
+  ],
+  "tests": [
+    {
+      "id": "test",
+      "argv": ["node", "--test", "test/"],
+      "evidence": "node-test"
+    }
+  ]
+}
