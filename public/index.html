@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gatika Telegram Relay</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    body { max-width: 760px; margin: 8vh auto; padding: 0 24px; line-height: 1.6; background: #0b0f14; color: #d7e0ea; }
+    h1 { font-size: 1.4rem; color: #7ee787; }
+    code { color: #ffd479; }
+    .ok { color: #7ee787; }
+    .muted { color: #8b98a5; }
+  </style>
+</head>
+<body>
+  <h1>Gatika Telegram Relay</h1>
+  <p class="ok">Netlify Server is running.</p>
+  <p>WebSocket endpoint:</p>
+  <p><code>wss://&lt;this-site&gt;/apiws?dst=&lt;telegram-ip&gt;:443&amp;dc=2</code></p>
+  <p>Health check: <code>/health</code></p>
+  <p class="muted">Only Telegram IPv4 ranges are accepted. The relay forwards opaque MTProto bytes; it does not decrypt them.</p>
+</body>
+</html>

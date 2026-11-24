@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Cloudflare Worker WebSocket relay restricted to Telegram IPv4 ranges, with TCP connect diagnostics and an MTProto obfuscation handshake probe.",
+  "description": "Telegram WebSocket-to-TCP relay for Cloudflare Workers and Netlify Server, restricted to Telegram IPv4 ranges, with TCP connect diagnostics and an MTProto probe.",
   "main": "src/index.mjs",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/telegram-nets.mjs && node --check src/mtproto-crypto.mjs && node --check src/mtproto-probe.mjs && node --check src/relay.mjs && node --check src/index.mjs && node --check test/telegram-nets.test.mjs && node --check test/mtproto-crypto.test.mjs && node --check test/relay.test.mjs",
-    "check:src": "node --check src/telegram-nets.mjs && node --check src/mtproto-crypto.mjs && node --check src/mtproto-probe.mjs && node --check src/relay.mjs && node --check src/index.mjs"
+    "check": "node --check src/telegram-nets.mjs && node --check src/mtproto-crypto.mjs && node --check src/mtproto-probe.mjs && node --check src/relay.mjs && node --check src/node-relay.mjs && node --check src/index.mjs && node --check netlify/server/index.mjs && node --check scripts/serve-node-relay.mjs && node --check test/telegram-nets.test.mjs && node --check test/mtproto-crypto.test.mjs && node --check test/relay.test.mjs && node --check test/node-relay.test.mjs",
+    "check:src": "node --check src/telegram-nets.mjs && node --check src/mtproto-crypto.mjs && node --check src/mtproto-probe.mjs && node --check src/relay.mjs && node --check src/node-relay.mjs && node --check src/index.mjs && node --check netlify/server/index.mjs"
   },
   "keywords": [
     "cloudflare-workers",

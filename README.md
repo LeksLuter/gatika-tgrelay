@@ -1,16 +1,24 @@
 # Gatika Telegram Relay
 
-Cloudflare Worker that accepts WebSocket connections from a special client
-and forwards raw bytes over TCP **only** to Telegram server IP addresses.
-Everything else is rejected before any socket is opened.
+Telegram WebSocket-to-TCP relay with two runtimes:
 
-- Transport: WebSocket in, TCP out via `cloudflare:sockets` (`connect`).
+- **Cloudflare Worker** — current production endpoint, `src/index.mjs`.
+- **Netlify Server** — Node.js 24 backup/test endpoint,
+  `netlify/server/index.mjs`.
+
+Both accept WebSocket connections from a special client and forward raw
+bytes over TCP **only** to Telegram server IP addresses. Everything else is
+rejected before any socket is opened.
+
+- Transport: WebSocket in, TCP out (`cloudflare:sockets` on Workers,
+  `node:net` on Netlify Server).
 - Allowlist: literal dotted-quad IPv4 addresses inside `TELEGRAM_NETS` only.
 - Diagnostics: `probe=1` checks TCP connectability, `probe=2` runs one
   MTProto obfuscation handshake (`req_pq_multi`) and returns a hex dump.
-- Offline-testable: all request logic lives in `src/relay.mjs` behind
-  injected `connect` / `makeWebSocketPair` factories; only `src/index.mjs`
-  imports `cloudflare:sockets`.
+- Offline-testable: Worker logic lives in `src/relay.mjs` behind injected
+  `connect` / `makeWebSocketPair` factories; Netlify logic lives in
+  `src/node-relay.mjs` behind an injected `connect` factory. Only
+  `src/index.mjs` imports `cloudflare:sockets`.
 
 No secrets, tokens, or account identifiers are stored in this repository.
 
@@ -163,14 +171,20 @@ ws.onmessage = (ev) => console.log(new Uint8Array(ev.data));
   production use.
 - **Hardcoded ranges drift.** Telegram may change its networks; update
   `src/telegram-nets.mjs` and redeploy when `403`s no longer match reality.
-- **No backpressure signal upstream.** Client-to-socket writes are
+- **Worker backpressure is limited.** Client-to-socket writes are
   serialized through a promise chain (write failure closes with `1011`);
-  socket-to-client uses `server.send(value)` without a drain check.
+  socket-to-client uses `server.send(value)` without a drain check. The
+  Netlify/Node runtime pauses and resumes both sides on `drain`.
+- **Netlify Server has platform cuts.** Free WebSockets are closed at
+  30 minutes and outbound TCP connections close after 60 seconds without
+  traffic. The Node relay sends a `1012` close at 29 minutes so clients
+  reconnect before the platform cutoff.
 
 ## Tests
 
-Requires Node.js 20 or newer. No network access is used; sockets and
-`WebSocketPair` are faked in tests.
+Requires Node.js 20 or newer for the test suite. Netlify Server itself
+requires Node.js 24; `netlify.toml` sets `NODE_VERSION=24`. No network
+access is used; sockets and `WebSocketPair` are faked in tests.
 
 ```sh
 npm test
@@ -193,6 +207,10 @@ What is covered:
 - `test/relay.test.mjs`: `426` without upgrade, `403` without calling
   `connect`, `probe=1` success/failure, `probe=2` against a simulated
   socket, `101` upgrade with one frame forwarded in each direction.
+- `test/node-relay.test.mjs`: masked-frame parser and fragmentation,
+  unmasked-frame rejection, `/health`, `403`/`426` guards, `probe=1`
+  through an injected transport, and a real local `http.Server` WebSocket
+  upgrade with bytes echoed through `node:net`.
 
 `src/index.mjs` is syntax-checked only because `cloudflare:sockets` and
 the `WebSocketPair` global do not exist under Node.
@@ -233,6 +251,61 @@ every push and deploys to Cloudflare only when `CLOUDFLARE_API_TOKEN` and
 `CLOUDFLARE_ACCOUNT_ID` are configured as repository secrets. Without those
 secrets the deploy job is skipped and the test job still runs.
 
+## Deployment (Netlify Server)
+
+This is an optional backup/test runtime, not a replacement for the working
+Cloudflare Worker. It uses Netlify Server, a long-running Node.js process —
+not Netlify Functions or Edge Functions, which cannot hold an incoming
+WebSocket.
+
+Files:
+
+- `netlify/server/index.mjs` — default-exports the `http.Server` from
+  `src/node-relay.mjs`; Netlify starts it and routes upgrades to it.
+- `netlify.toml` — publishes `public/`, sets `NODE_VERSION=24`, region `fra`.
+- `public/index.html` — small status page at `/`.
+- `scripts/serve-node-relay.mjs` — local runner for the same server.
+
+Steps:
+
+1. Push this repository to GitHub (the Worker files remain unchanged).
+2. In Netlify, create a new project from the repository. Netlify Server is
+   an Early Access feature; enable it for the team if it is not visible.
+3. Keep the default build command empty; Netlify reads `netlify.toml`.
+   The server entry must stay at `netlify/server/index.mjs`.
+4. Deploy, then smoke-test:
+   - `https://<site>.netlify.app/health` -> `ok`.
+   - `https://<site>.netlify.app/apiws?dst=91.108.4.5:443&probe=1` ->
+     `connected 91.108.4.5:443`.
+   - `wss://<site>.netlify.app/apiws?dst=<allowed-ip>:443&dc=2` from the
+     special client.
+5. Run a real client for at least 35 minutes. The relay closes at 29
+   minutes with WebSocket code `1012`; verify that the client reconnects
+   without user action.
+
+Local run:
+
+```sh
+npm run check && npm test
+node scripts/serve-node-relay.mjs
+# another terminal:
+curl 'http://127.0.0.1:8787/health'
+curl 'http://127.0.0.1:8787/apiws?dst=91.108.4.5:443&probe=1'
+```
+
+Netlify Server limits that matter:
+
+- Free/Personal: one small instance (1 GB RAM, shared vCPU).
+- WebSocket connection: closed after 30 minutes on Free, 2 hours on paid.
+- Outbound TCP: closed after 60 seconds without data in either direction;
+  TCP keepalive does not count.
+- Instance lifetime: at most 8 hours; a replacement closes connections.
+- Server is free during Early Access; after GA, compute consumes credits.
+
+Because of the 30-minute cut and 60-second idle rule, treat Netlify as a
+test/secondary endpoint. Keep Cloudflare as the primary relay until a real
+Telegram client proves reconnects are acceptable.
+
 ### LXI free hosting is not a relay runtime
 
 LXI Free provides PHP/Apache web hosting and scheduled tasks, not a
@@ -248,10 +321,15 @@ Cloudflare Worker, not a PHP script. Use Cloudflare Workers, a foreign VPS,
 
 ```text
 src/index.mjs            Worker entrypoint (only cloudflare:sockets import)
-src/relay.mjs            Request decision tree + byte piping (createRelay, msgBytes)
+src/relay.mjs            Worker request tree + byte piping (createRelay, msgBytes)
+src/node-relay.mjs       Node http.Server + WebSocket framing + net relay
 src/telegram-nets.mjs    TELEGRAM_NETS, ipToInt, isAllowedHost, parseDst
 src/mtproto-crypto.mjs   ecbBlock, ctrStream, xorBuf, buildHandshake
 src/mtproto-probe.mjs    mtprotoProbe socket I/O + response decryption
+netlify/server/index.mjs Netlify Server entry (exports http.Server)
+netlify.toml             Node 24, public/, Frankfurt region
+public/index.html        Status page served by Netlify at /
+scripts/serve-node-relay.mjs  Local Netlify Server runner
 test/                    Offline node:test suites (fake sockets/pairs)
 wrangler.toml            Worker name, entrypoint, compatibility date
 package.json             Private ESM package, test/check scripts
