@@ -1,0 +1,19 @@
+# Релей Gatika: Cloudflare Worker (бесплатный план).
+#
+# Деплой (один раз):
+#   cd workers/tgrelay
+#   npx wrangler login          # или переменная CLOUDFLARE_API_TOKEN
+#   npx wrangler deploy
+#
+# После деплоя wrangler напечатает адрес вида
+#   https://gatika-tgrelay.<account>.workers.dev
+# Его нужно передать приложению как адрес релея:
+#   wss://gatika-tgrelay.<account>.workers.dev/apiws?dst={dst}&dc={dc}
+name = "gatika-tgrelay"
+main = "src/index.mjs"
+compatibility_date = "2026-11-01"
+
+# Перенос байтов в TCP к дата-центрам Telegram: воркер сам ничего не хранит.
+# Ограничения бесплатного плана (100k запросов в день) для WS-релея приемлемы:
+# соединений мало, они долгоживущие.
+workers_dev = true
