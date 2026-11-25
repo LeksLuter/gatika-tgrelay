@@ -45,6 +45,8 @@ async function api(path, method = "GET", body) {
   return data;
 }
 
+const unwrap = (x) => (x && x.service ? x.service : x);
+
 const name = process.env.SERVICE_NAME || "gatika-tgrelay";
 const region = process.env.REGION || "frankfurt";
 const plan = process.env.PLAN || "free";
@@ -90,7 +92,7 @@ if (service) {
   await api("/services/" + service.id + "/deploys", "POST", { clearCache: "do_not_clear" });
   console.log("деплой запущен");
 } else {
-  service = await api("/services", "POST", {
+  const created = await api("/services", "POST", {
     type: "web_service",
     name,
     ownerId: owner.id,
@@ -99,17 +101,23 @@ if (service) {
     autoDeploy: "yes",
     serviceDetails,
   });
+  service = unwrap(created);
+  if (!service || !service.id) {
+    console.log("ответ Render: " + JSON.stringify(created).slice(0, 1500));
+    throw new Error("Render создал сервис, но не вернул id");
+  }
   console.log("сервис создан: " + service.id);
 }
 
 const id = service.id;
 let url = (service.serviceDetails && service.serviceDetails.url) || "";
+let live = false;
 
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 60; i++) {
   await sleep(15000);
   let state;
   try {
-    state = await api("/services/" + id);
+    state = unwrap(await api("/services/" + id));
   } catch (err) {
     console.log("[" + i + "] сервис: " + err.message);
     continue;
@@ -118,7 +126,8 @@ for (let i = 0; i < 40; i++) {
   let deploy = null;
   try {
     const deploys = await api("/services/" + id + "/deploys?limit=1");
-    deploy = deploys && deploys[0] && deploys[0].deploy;
+    const first = deploys && deploys[0];
+    deploy = first && (first.deploy || first);
   } catch (err) {
     console.log("[" + i + "] деплои: " + err.message);
   }
@@ -127,6 +136,7 @@ for (let i = 0; i < 40; i++) {
     " suspended=" + state.suspended + " url=" + url
   );
   if (deploy && deploy.status === "live") {
+    live = true;
     console.log("RESULT_SERVICE_ID=" + id);
     console.log("RESULT_URL=" + url);
     console.log("RESULT_DASHBOARD=https://dashboard.render.com/web/" + id);
@@ -135,6 +145,10 @@ for (let i = 0; i < 40; i++) {
   if (deploy && ["build_failed", "pre_deploy_failed", "canceled", "deactivated"].includes(deploy.status)) {
     throw new Error("деплой завершился статусом " + deploy.status);
   }
+}
+
+if (!live) {
+  throw new Error("деплой не стал live за 15 минут: " + (url || "нет url"));
 }
 
 if (!url) {
