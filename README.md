@@ -22,6 +22,18 @@ rejected before any socket is opened.
 
 No secrets, tokens, or account identifiers are stored in this repository.
 
+## Живой релей на Render
+
+```
+wss://gatika-tgrelay.onrender.com/apiws?dst={dst}&dc={dc}
+```
+
+- Сервис: `srv-dc39p89ksfps739fv6l0`, регион Frankfurt, план free.
+- Health: https://gatika-tgrelay.onrender.com/health
+- Проверка TCP до DC: https://gatika-tgrelay.onrender.com/apiws?dst=149.154.167.51:443&probe=1
+- Передеплой: Actions → `render-deploy` → Run workflow (ключ Render — в секрете `RENDER_API_KEY`).
+- Бесплатный инстанс засыпает после 15 минут без трафика; пока клиент держит WebSocket, сервис не спит.
+
 ## Allowed Telegram networks
 
 Defined in `src/telegram-nets.mjs` (`TELEGRAM_NETS`):
