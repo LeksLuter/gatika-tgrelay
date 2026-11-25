@@ -1,0 +1,43 @@
+name: render-deploy
+
+# Создаёт/обновляет сервис Render и запускает деплой.
+# Ключ Render хранится в секрете репозитория RENDER_API_KEY.
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: Render service name
+        required: false
+        default: gatika-tgrelay
+      region:
+        description: Render region
+        required: false
+        default: frankfurt
+      plan:
+        description: Render plan
+        required: false
+        default: free
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Create or update Render service
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_NAME: ${{ inputs.service_name }}
+          REGION: ${{ inputs.region }}
+          PLAN: ${{ inputs.plan }}
+        run: node scripts/render-deploy.mjs
