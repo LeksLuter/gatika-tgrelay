@@ -41,3 +41,5 @@ jobs:
           REGION: ${{ inputs.region }}
           PLAN: ${{ inputs.plan }}
         run: node scripts/render-deploy.mjs
+      - name: Smoke-test deployed relay (MTProto over WSS)
+        run: node scripts/smoke-relay.mjs
